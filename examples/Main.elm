@@ -27,9 +27,11 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
   { value = ""
+  -- Initialize the debouncer.
+  -- Choose the strategy for your use case.
   , debounce =
       Debounce.init
-        { strategy = Debounce.soon (1 * second)
+        { strategy = Debounce.later (1 * second)
         , transform = DebounceMsg
         }
   , report = []
@@ -51,6 +53,7 @@ update msg model =
 
     Input s ->
       let
+        -- Push your values here.
         (debounce, cmd) =
           Debounce.push s model.debounce
       in
@@ -59,11 +62,9 @@ update msg model =
         , debounce = debounce
         } ! [ cmd ]
 
-    Saved s ->
-      { model
-      | report = s :: model.report
-      } ! []
-
+    -- This is where commands are actually sent.
+    -- The logic can be dependent on the current model.
+    -- You can also use all the accumulated values.
     DebounceMsg msg ->
       let
         (debounce, cmd) =
@@ -73,6 +74,11 @@ update msg model =
             model.debounce
       in
         { model | debounce = debounce } ! [ cmd ]
+
+    Saved s ->
+      { model
+      | report = s :: model.report
+      } ! []
 
 
 save : String -> Cmd Msg

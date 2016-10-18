@@ -1,19 +1,42 @@
 module Debounce exposing
-  ( Debounce
-  , Config
+  ( Debounce, Msg
+  , Config, init
   , Strategy, soon, later
   , Send, takeLast, takeAll
-  , init
-  , Msg
   , update, push
   )
 
+{-| The Debouncer. See the full example [here](https://github.com/jinjor/elm-debounce/blob/master/examples/Main.elm).
+
+* This module works with the Elm Architecture.
+* You can choose the strategy and define how commands are sent.
+
+# Types
+@docs Debounce, Msg
+
+# Initialize
+@docs Config, init
+
+# Strategies
+@docs Strategy, soon, later
+
+# Sending Commands
+@docs Send, takeLast, takeAll
+
+# Update
+@docs update, push
+
+-}
 
 import Time exposing (..)
 import Task exposing (..)
 import Process
 
 
+{-| The state of the debouncer.
+
+It is parameterized with the value type `a` and the user's message tyle `msg`.
+-}
 type Debounce a msg =
   Debounce
     { config : Config msg
@@ -22,43 +45,57 @@ type Debounce a msg =
     }
 
 
+{-| Config contains the debouncing strategy and the message transformation.
+-}
 type alias Config msg =
   { strategy : Strategy
   , transform : Msg -> msg
   }
 
 
+{-| Strategy defines the timing when commands are sent.
+-}
 type Strategy
   = Soon Time
   | Later Time
 
 
+{-| Send command as soon as possible, with given rate limit. (a.k.a. Throttle)
+-}
 soon : Time -> Strategy
 soon = Soon
 
 
+{-| Send command after becomming stable, with given rate limit. (a.k.a. Debounce)
+-}
 later : Time -> Strategy
 later = Later
 
 
+{-| This function consumes values and send a command.
+
+If you want to postpone sending, return the values back to keep them.
+-}
 type alias Send a msg =
   a -> List a -> (List a, Cmd msg)
 
 
+{-| Send a command using the latest value.
+-}
 takeLast : (a -> Cmd msg) -> Send a msg
 takeLast send head tail =
   ([], send head)
 
 
+{-| Send a command using all the accumulated values.
+-}
 takeAll : (a -> List a -> Cmd msg) -> Send a msg
 takeAll send head tail =
   ([], send head tail)
 
 
--- consume
--- (Is there any case where "send" requires partial input?)
-
-
+{-| Initialize the debouncer. Call this from your `init` function.
+-}
 init : Config msg -> Debounce a msg
 init config =
   Debounce
@@ -68,11 +105,26 @@ init config =
     }
 
 
+{-| The messages that are used internally.
+-}
 type Msg
   = NoOp
   | Delay Int
 
 
+{-| This is the component's update function following the Elm Architecture.
+
+e.g. Saving the last value.
+```
+(debounce, cmd) =
+  Debounce.update
+    (Debounce.takeLast save) -- save : value -> Cmd Msg
+    msg
+    model.debounce
+```
+The sending logic can depend on the current model. If you want to stop sending, return `Cmd.none`.
+
+-}
 update : Send a msg -> Msg -> Debounce a msg -> (Debounce a msg, Cmd msg)
 update send msg (Debounce d) =
   case msg of
@@ -115,7 +167,8 @@ update send msg (Debounce d) =
             _ ->
               (Debounce d) ! []
 
-
+{-| Push a value into the debouncer.
+-}
 push : a -> Debounce a msg -> (Debounce a msg, Cmd msg)
 push a (Debounce d) =
   case d.config.strategy of
