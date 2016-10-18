@@ -1,7 +1,7 @@
 module Debounce exposing
   ( Debounce, Msg
   , Config, init
-  , Strategy, soon, later
+  , Strategy, soon, soonAfter, later
   , Send, takeLast, takeAll
   , update, push
   )
@@ -18,7 +18,7 @@ module Debounce exposing
 @docs Config, init
 
 # Strategies
-@docs Strategy, soon, later
+@docs Strategy, soon, soonAfter, later
 
 # Sending Commands
 @docs Send, takeLast, takeAll
@@ -56,14 +56,22 @@ type alias Config msg =
 {-| Strategy defines the timing when commands are sent.
 -}
 type Strategy
-  = Soon Time
+  = Soon Time Time
   | Later Time
 
 
 {-| Send command as soon as possible, with given rate limit. (a.k.a. Throttle)
+
+Note: The first command will be sent immidiately.
 -}
 soon : Time -> Strategy
-soon = Soon
+soon = Soon 0
+
+
+{-| Similar to `soon`, but send first command after offset time.
+-}
+soonAfter : Time -> Time -> Strategy
+soonAfter = Soon
 
 
 {-| Send command after becomming stable, with given rate limit. (a.k.a. Debounce)
@@ -133,7 +141,7 @@ update send msg (Debounce d) =
 
     Delay len ->
       case d.config.strategy of
-        Soon delay ->
+        Soon _ delay ->
           case d.input of
             head :: tail ->
               let
@@ -172,13 +180,13 @@ update send msg (Debounce d) =
 push : a -> Debounce a msg -> (Debounce a msg, Cmd msg)
 push a (Debounce d) =
   case d.config.strategy of
-    Soon delay ->
+    Soon offset delay ->
       if d.locked then
         (Debounce { d | input = a :: d.input }, Cmd.none)
       else
         ( Debounce { d | input = a :: d.input }
         , Cmd.map d.config.transform
-          (delayCmd 0 (List.length d.input + 1))
+          (delayCmd offset (List.length d.input + 1))
         )
 
     Later delay ->
