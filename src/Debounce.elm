@@ -15,20 +15,16 @@ import Process
 
 
 type Debounce a msg =
-  Debounce (DebounceInner a msg)
+  Debounce
+    { config : Config msg
+    , input : List a
+    , locked : Bool
+    }
 
 
-type alias DebounceInner a msg =
-  { config : Config a msg
-  , input : List a
-  , locked : Bool
-  }
-
-
-type alias Config a msg =
+type alias Config msg =
   { strategy : Strategy
   , transform : Msg -> msg
-  , send : Send a msg
   }
 
 
@@ -63,7 +59,7 @@ takeAll send head tail =
 -- (Is there any case where "send" requires partial input?)
 
 
-init : Config a msg -> Debounce a msg
+init : Config msg -> Debounce a msg
 init config =
   Debounce
     { config = config
@@ -77,8 +73,8 @@ type Msg
   | Delay Int
 
 
-update : Msg -> Debounce a msg -> (Debounce a msg, Cmd msg)
-update msg (Debounce d) =
+update : Send a msg -> Msg -> Debounce a msg -> (Debounce a msg, Cmd msg)
+update send msg (Debounce d) =
   case msg of
     NoOp ->
       (Debounce d) ! []
@@ -88,7 +84,19 @@ update msg (Debounce d) =
         Soon delay ->
           case d.input of
             head :: tail ->
-              sendAndSleep d delay head tail
+              let
+                (input, sendCmd) =
+                  send head tail
+
+                selfCmd =
+                  Cmd.map d.config.transform
+                    (delayCmd delay (List.length d.input + 1))
+              in
+                Debounce
+                  { d
+                  | input = input
+                  , locked = True
+                  } ! [ sendCmd, selfCmd ]
 
             _ ->
               Debounce { d | locked = False } ! []
@@ -98,7 +106,7 @@ update msg (Debounce d) =
             (True, head :: tail) ->
               let
                 (input, cmd) =
-                  d.config.send head tail
+                  send head tail
               in
                 ( Debounce { d | input = input }
                 , cmd
@@ -115,7 +123,10 @@ push a (Debounce d) =
       if d.locked then
         (Debounce { d | input = a :: d.input }, Cmd.none)
       else
-        sendAndSleep d delay a d.input
+        ( Debounce { d | input = a :: d.input }
+        , Cmd.map d.config.transform
+          (delayCmd 0 (List.length d.input + 1))
+        )
 
     Later delay ->
       let
@@ -127,28 +138,6 @@ push a (Debounce d) =
             (delayCmd delay (List.length d.input + 1))
       in
         (debounce, cmd)
-
-
-sendAndSleep
-  :  DebounceInner a msg
-  -> Time
-  -> a
-  -> List a
-  -> (Debounce a msg, Cmd msg)
-sendAndSleep d delay head tail =
-  let
-    (input, sendCmd) =
-      d.config.send head tail
-
-    selfCmd =
-      Cmd.map d.config.transform
-        (delayCmd delay (List.length d.input + 1))
-  in
-    Debounce
-      { d
-      | input = input
-      , locked = True
-      } ! [ sendCmd, selfCmd ]
 
 
 delayCmd : Time -> Int -> Cmd Msg

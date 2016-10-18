@@ -2,11 +2,12 @@ import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Debounce as Debounce exposing (Debounce)
+import Debounce exposing (Debounce)
 import Time exposing (..)
 import Task exposing (..)
 
 
+main : Program Never
 main =
   App.program
     { init = init
@@ -28,20 +29,11 @@ init =
   { value = ""
   , debounce =
       Debounce.init
-        { strategy = Debounce.later (1 * second)
+        { strategy = Debounce.soon (1 * second)
         , transform = DebounceMsg
-        , send = Debounce.takeLast save
         }
   , report = []
   } ! []
-
-
-save : String -> Cmd Msg
-save s =
-  Task.perform
-    (\_ -> NoOp)
-    Saved
-    (Task.succeed s)
 
 
 type Msg
@@ -75,9 +67,20 @@ update msg model =
     DebounceMsg msg ->
       let
         (debounce, cmd) =
-          Debounce.update msg model.debounce
+          Debounce.update
+            (Debounce.takeLast save)
+            msg
+            model.debounce
       in
         { model | debounce = debounce } ! [ cmd ]
+
+
+save : String -> Cmd Msg
+save s =
+  Task.perform
+    (\_ -> NoOp)
+    Saved
+    (Task.succeed s)
 
 
 subscriptions : Model -> Sub Msg
@@ -95,4 +98,4 @@ view model =
 
 report : String -> Html msg
 report s =
-  li [] [text (toString s)]
+  li [] [ text (toString s) ]
