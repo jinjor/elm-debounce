@@ -1,5 +1,5 @@
 {
-    "version": "1.0.0",
+    "version": "2.0.0",
     "summary": "Yet another debouncer for Elm.",
     "repository": "https://github.com/jinjor/elm-debounce.git",
     "license": "BSD3",
