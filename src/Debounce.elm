@@ -35,17 +35,18 @@ import Process
 
 {-| The state of the debouncer.
 
-It is parameterized with the value type `a` and the user's message tyle `msg`.
+It is parameterized with the value type `a`.
 -}
-type Debounce a msg =
+type Debounce a =
   Debounce
-    { config : Config msg
-    , input : List a
+    { input : List a
     , locked : Bool
     }
 
 
 {-| Config contains the debouncing strategy and the message transformation.
+
+This config should be constant and shared between `update` function and `push` function.
 -}
 type alias Config msg =
   { strategy : Strategy
@@ -60,7 +61,7 @@ type Strategy
   | Later Time
 
 
-{-| Send command as soon as possible, with given rate limit. (a.k.a. Throttle)
+{-| Send command as soon as it gets ready, with given rate limit. (a.k.a. Throttle)
 
 Note: The first command will be sent immidiately.
 -}
@@ -74,7 +75,7 @@ soonAfter : Time -> Time -> Strategy
 soonAfter = Soon
 
 
-{-| Send command after becomming stable, with given rate limit. (a.k.a. Debounce)
+{-| Send command after becomming stable, with given delay time. (a.k.a. Debounce)
 -}
 later : Time -> Strategy
 later = Later
@@ -104,11 +105,10 @@ takeAll send head tail =
 
 {-| Initialize the debouncer. Call this from your `init` function.
 -}
-init : Config msg -> Debounce a msg
-init config =
+init : Debounce a
+init =
   Debounce
-    { config = config
-    , input = []
+    { input = []
     , locked = False
     }
 
@@ -126,21 +126,26 @@ e.g. Saving the last value.
 ```
 (debounce, cmd) =
   Debounce.update
+    { strategy = Debounce.later (1 * second)
+    , transform = DebounceMsg
+    }
     (Debounce.takeLast save) -- save : value -> Cmd Msg
     msg
     model.debounce
 ```
+The config should be constant and shared with `push` function.
+
 The sending logic can depend on the current model. If you want to stop sending, return `Cmd.none`.
 
 -}
-update : Send a msg -> Msg -> Debounce a msg -> (Debounce a msg, Cmd msg)
-update send msg (Debounce d) =
+update : Config msg -> Send a msg -> Msg -> Debounce a -> (Debounce a, Cmd msg)
+update config send msg (Debounce d) =
   case msg of
     NoOp ->
       (Debounce d) ! []
 
     Delay len ->
-      case d.config.strategy of
+      case config.strategy of
         Soon _ delay ->
           case d.input of
             head :: tail ->
@@ -149,7 +154,7 @@ update send msg (Debounce d) =
                   send head tail
 
                 selfCmd =
-                  Cmd.map d.config.transform
+                  Cmd.map config.transform
                     (delayCmd delay (List.length d.input + 1))
               in
                 Debounce
@@ -177,15 +182,15 @@ update send msg (Debounce d) =
 
 {-| Push a value into the debouncer.
 -}
-push : a -> Debounce a msg -> (Debounce a msg, Cmd msg)
-push a (Debounce d) =
-  case d.config.strategy of
+push : Config msg -> a -> Debounce a -> (Debounce a, Cmd msg)
+push config a (Debounce d) =
+  case config.strategy of
     Soon offset delay ->
       if d.locked then
         (Debounce { d | input = a :: d.input }, Cmd.none)
       else
         ( Debounce { d | input = a :: d.input }
-        , Cmd.map d.config.transform
+        , Cmd.map config.transform
           (delayCmd offset (List.length d.input + 1))
         )
 
@@ -195,7 +200,7 @@ push a (Debounce d) =
           Debounce { d | input = a :: d.input }
 
         cmd =
-          Cmd.map d.config.transform
+          Cmd.map config.transform
             (delayCmd delay (List.length d.input + 1))
       in
         (debounce, cmd)

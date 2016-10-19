@@ -11,17 +11,26 @@ init : ( Model, Cmd Msg )
 init =
   { value = ""
   -- Initialize the debouncer.
-  -- Choose the strategy for your use case.
-  , debounce =
-      Debounce.init
-        { strategy = Debounce.later (1 * second)
-        , transform = DebounceMsg
-        }
+  , debounce = Debounce.init
   , report = []
   } ! []
-```
 
-```elm
+
+type Msg
+  = Input String
+  | DebounceMsg Debounce.Msg
+  ...
+
+
+-- This defines how the debouncer should work.
+-- Choose the strategy for your use case.
+debounceConfig : Debounce.Config Msg
+debounceConfig =
+  { strategy = Debounce.later (1 * second)
+  , transform = DebounceMsg
+  }
+
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
@@ -29,7 +38,7 @@ update msg model =
       let
         -- Push your values here.
         (debounce, cmd) =
-          Debounce.push s model.debounce
+          Debounce.push debounceConfig s model.debounce
       in
         { model
         | value = s
@@ -43,6 +52,7 @@ update msg model =
       let
         (debounce, cmd) =
           Debounce.update
+            debounceConfig
             (Debounce.takeLast save)
             msg
             model.debounce
@@ -52,6 +62,6 @@ update msg model =
     ...
 ```
 
-### LICENSE
+## LICENSE
 
 BSD3

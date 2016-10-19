@@ -8342,23 +8342,22 @@ var _user$project$Debounce$Config = F2(
 var _user$project$Debounce$Debounce = function (a) {
 	return {ctor: 'Debounce', _0: a};
 };
-var _user$project$Debounce$init = function (config) {
-	return _user$project$Debounce$Debounce(
-		{
-			config: config,
-			input: _elm_lang$core$Native_List.fromArray(
-				[]),
-			locked: false
-		});
-};
+var _user$project$Debounce$init = _user$project$Debounce$Debounce(
+	{
+		input: _elm_lang$core$Native_List.fromArray(
+			[]),
+		locked: false
+	});
 var _user$project$Debounce$Later = function (a) {
 	return {ctor: 'Later', _0: a};
 };
 var _user$project$Debounce$later = _user$project$Debounce$Later;
-var _user$project$Debounce$Soon = function (a) {
-	return {ctor: 'Soon', _0: a};
-};
-var _user$project$Debounce$soon = _user$project$Debounce$Soon;
+var _user$project$Debounce$Soon = F2(
+	function (a, b) {
+		return {ctor: 'Soon', _0: a, _1: b};
+	});
+var _user$project$Debounce$soon = _user$project$Debounce$Soon(0);
+var _user$project$Debounce$soonAfter = _user$project$Debounce$Soon;
 var _user$project$Debounce$Delay = function (a) {
 	return {ctor: 'Delay', _0: a};
 };
@@ -8378,8 +8377,8 @@ var _user$project$Debounce$delayCmd = F2(
 					return _elm_lang$core$Task$succeed(inputCount);
 				}));
 	});
-var _user$project$Debounce$update = F3(
-	function (send, msg, _p2) {
+var _user$project$Debounce$update = F4(
+	function (config, send, msg, _p2) {
 		var _p3 = _p2;
 		var _p10 = _p3._0;
 		var _p4 = msg;
@@ -8390,16 +8389,16 @@ var _user$project$Debounce$update = F3(
 				_elm_lang$core$Native_List.fromArray(
 					[]));
 		} else {
-			var _p5 = _p10.config.strategy;
+			var _p5 = config.strategy;
 			if (_p5.ctor === 'Soon') {
 				var _p6 = _p10.input;
 				if (_p6.ctor === '::') {
 					var selfCmd = A2(
 						_elm_lang$core$Platform_Cmd$map,
-						_p10.config.transform,
+						config.transform,
 						A2(
 							_user$project$Debounce$delayCmd,
-							_p5._0,
+							_p5._1,
 							_elm_lang$core$List$length(_p10.input) + 1));
 					var _p7 = A2(send, _p6._0, _p6._1);
 					var input = _p7._0;
@@ -8452,11 +8451,11 @@ var _user$project$Debounce$update = F3(
 			}
 		}
 	});
-var _user$project$Debounce$push = F2(
-	function (a, _p11) {
+var _user$project$Debounce$push = F3(
+	function (config, a, _p11) {
 		var _p12 = _p11;
 		var _p14 = _p12._0;
-		var _p13 = _p14.config.strategy;
+		var _p13 = config.strategy;
 		if (_p13.ctor === 'Soon') {
 			return _p14.locked ? {
 				ctor: '_Tuple2',
@@ -8477,16 +8476,16 @@ var _user$project$Debounce$push = F2(
 						})),
 				_1: A2(
 					_elm_lang$core$Platform_Cmd$map,
-					_p14.config.transform,
+					config.transform,
 					A2(
 						_user$project$Debounce$delayCmd,
-						0,
+						_p13._0,
 						_elm_lang$core$List$length(_p14.input) + 1))
 			};
 		} else {
 			var cmd = A2(
 				_elm_lang$core$Platform_Cmd$map,
-				_p14.config.transform,
+				config.transform,
 				A2(
 					_user$project$Debounce$delayCmd,
 					_p13._0,
@@ -8514,6 +8513,16 @@ var _user$project$Main$report = function (s) {
 var _user$project$Main$subscriptions = function (model) {
 	return _elm_lang$core$Platform_Sub$none;
 };
+var _user$project$Main$init = A2(
+	_elm_lang$core$Platform_Cmd_ops['!'],
+	{
+		value: '',
+		debounce: _user$project$Debounce$init,
+		report: _elm_lang$core$Native_List.fromArray(
+			[])
+	},
+	_elm_lang$core$Native_List.fromArray(
+		[]));
 var _user$project$Main$Model = F3(
 	function (a, b, c) {
 		return {value: a, debounce: b, report: c};
@@ -8521,20 +8530,10 @@ var _user$project$Main$Model = F3(
 var _user$project$Main$DebounceMsg = function (a) {
 	return {ctor: 'DebounceMsg', _0: a};
 };
-var _user$project$Main$init = A2(
-	_elm_lang$core$Platform_Cmd_ops['!'],
-	{
-		value: '',
-		debounce: _user$project$Debounce$init(
-			{
-				strategy: _user$project$Debounce$soon(1 * _elm_lang$core$Time$second),
-				transform: _user$project$Main$DebounceMsg
-			}),
-		report: _elm_lang$core$Native_List.fromArray(
-			[])
-	},
-	_elm_lang$core$Native_List.fromArray(
-		[]));
+var _user$project$Main$debounceConfig = {
+	strategy: _user$project$Debounce$later(1 * _elm_lang$core$Time$second),
+	transform: _user$project$Main$DebounceMsg
+};
 var _user$project$Main$Saved = function (a) {
 	return {ctor: 'Saved', _0: a};
 };
@@ -8589,7 +8588,7 @@ var _user$project$Main$update = F2(
 						[]));
 			case 'Input':
 				var _p3 = _p1._0;
-				var _p2 = A2(_user$project$Debounce$push, _p3, model.debounce);
+				var _p2 = A3(_user$project$Debounce$push, _user$project$Main$debounceConfig, _p3, model.debounce);
 				var debounce = _p2._0;
 				var cmd = _p2._1;
 				return A2(
@@ -8599,19 +8598,10 @@ var _user$project$Main$update = F2(
 						{value: _p3, debounce: debounce}),
 					_elm_lang$core$Native_List.fromArray(
 						[cmd]));
-			case 'Saved':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_elm_lang$core$Native_Utils.update(
-						model,
-						{
-							report: A2(_elm_lang$core$List_ops['::'], _p1._0, model.report)
-						}),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			default:
-				var _p4 = A3(
+			case 'DebounceMsg':
+				var _p4 = A4(
 					_user$project$Debounce$update,
+					_user$project$Main$debounceConfig,
 					_user$project$Debounce$takeLast(_user$project$Main$save),
 					_p1._0,
 					model.debounce);
@@ -8624,6 +8614,16 @@ var _user$project$Main$update = F2(
 						{debounce: debounce}),
 					_elm_lang$core$Native_List.fromArray(
 						[cmd]));
+			default:
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_elm_lang$core$Native_Utils.update(
+						model,
+						{
+							report: A2(_elm_lang$core$List_ops['::'], _p1._0, model.report)
+						}),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
 		}
 	});
 var _user$project$Main$main = {
