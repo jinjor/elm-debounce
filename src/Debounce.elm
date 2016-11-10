@@ -1,9 +1,9 @@
 module Debounce exposing
   ( Debounce, Msg
   , Config, init
-  , Strategy, soon, soonAfter, later
+  , Strategy, soon, soonAfter, later, manual
   , Send, takeLast, takeAll
-  , update, push
+  , update, push, unlock
   )
 
 {-| The Debouncer. See the full example [here](https://github.com/jinjor/elm-debounce/blob/master/examples/Main.elm).
@@ -18,13 +18,13 @@ module Debounce exposing
 @docs Config, init
 
 # Strategies
-@docs Strategy, soon, soonAfter, later
+@docs Strategy, soon, soonAfter, later, manual
 
 # Sending Commands
 @docs Send, takeLast, takeAll
 
 # Update
-@docs update, push
+@docs update, push, unlock
 
 -}
 
@@ -57,8 +57,17 @@ type alias Config msg =
 {-| Strategy defines the timing when commands are sent.
 -}
 type Strategy
-  = Soon Time Time
+  = Manual
+  | Soon Time Time
   | Later Time
+
+
+{-| Send commands when it is manually unlocked. See `unlock`.
+
+Typically, `unlock` is called after previous response comes back.
+-}
+manual : Strategy
+manual = Manual
 
 
 {-| Send command as soon as it gets ready, with given rate limit. (a.k.a. Throttle)
@@ -117,6 +126,7 @@ init =
 -}
 type Msg
   = NoOp
+  | UnlockAndSend
   | Delay Int
 
 
@@ -144,8 +154,40 @@ update config send msg (Debounce d) =
     NoOp ->
       (Debounce d) ! []
 
+    UnlockAndSend ->
+      case d.input of
+        head :: tail ->
+          let
+            (input, sendCmd) =
+              send head tail
+          in
+            Debounce
+              { d
+              | input = input
+              , locked = True
+              } ! [ sendCmd ]
+
+        _ ->
+          Debounce { d | locked = False } ! []
+
     Delay len ->
       case config.strategy of
+        Manual ->
+          case d.input of
+            head :: tail ->
+              let
+                (input, sendCmd) =
+                  send head tail
+              in
+                Debounce
+                  { d
+                  | input = input
+                  , locked = True
+                  } ! [ sendCmd ]
+
+            _ ->
+              Debounce d ! []
+
         Soon _ delay ->
           case d.input of
             head :: tail ->
@@ -180,30 +222,50 @@ update config send msg (Debounce d) =
             _ ->
               (Debounce d) ! []
 
+
+{-| Manually unlock. This works for `manual` Strategy.
+-}
+unlock : Config msg -> Cmd msg
+unlock config =
+  Cmd.map config.transform <|
+    Task.perform
+      (\_ -> NoOp)
+      identity
+      (Task.succeed UnlockAndSend)
+
+
+
 {-| Push a value into the debouncer.
 -}
 push : Config msg -> a -> Debounce a -> (Debounce a, Cmd msg)
 push config a (Debounce d) =
   case config.strategy of
+    Manual ->
+      ( Debounce { d | input = a :: d.input }
+      , if d.locked then
+          Cmd.none
+        else
+          Cmd.map
+            config.transform
+            (delayCmd 0 (List.length d.input + 1))
+      )
+
     Soon offset delay ->
-      if d.locked then
-        (Debounce { d | input = a :: d.input }, Cmd.none)
-      else
-        ( Debounce { d | input = a :: d.input }
-        , Cmd.map config.transform
-          (delayCmd offset (List.length d.input + 1))
-        )
+      ( Debounce { d | input = a :: d.input }
+      , if d.locked then
+          Cmd.none
+        else
+          Cmd.map
+            config.transform
+            (delayCmd offset (List.length d.input + 1))
+      )
 
     Later delay ->
-      let
-        debounce =
-          Debounce { d | input = a :: d.input }
-
-        cmd =
-          Cmd.map config.transform
-            (delayCmd delay (List.length d.input + 1))
-      in
-        (debounce, cmd)
+      ( Debounce { d | input = a :: d.input }
+      , Cmd.map
+          config.transform
+          (delayCmd delay (List.length d.input + 1))
+      )
 
 
 delayCmd : Time -> Int -> Cmd Msg

@@ -8603,10 +8603,7 @@ var _jinjor$elm_debounce$Main$Model = F3(
 var _jinjor$elm_debounce$Main$DebounceMsg = function (a) {
 	return {ctor: 'DebounceMsg', _0: a};
 };
-var _jinjor$elm_debounce$Main$debounceConfig = {
-	strategy: _jinjor$elm_debounce$Debounce$later(1 * _elm_lang$core$Time$second),
-	transform: _jinjor$elm_debounce$Main$DebounceMsg
-};
+var _jinjor$elm_debounce$Main$debounceConfig = {strategy: _jinjor$elm_debounce$Debounce$manual, transform: _jinjor$elm_debounce$Main$DebounceMsg};
 var _jinjor$elm_debounce$Main$Saved = function (a) {
 	return {ctor: 'Saved', _0: a};
 };
@@ -8647,12 +8644,17 @@ var _jinjor$elm_debounce$Main$save = function (s) {
 			return _jinjor$elm_debounce$Main$NoOp;
 		},
 		_jinjor$elm_debounce$Main$Saved,
-		_elm_lang$core$Task$succeed(s));
+		A2(
+			_elm_lang$core$Task$andThen,
+			_elm_lang$core$Process$sleep(_elm_lang$core$Time$second),
+			function (_p1) {
+				return _elm_lang$core$Task$succeed(s);
+			}));
 };
 var _jinjor$elm_debounce$Main$update = F2(
 	function (msg, model) {
-		var _p1 = msg;
-		switch (_p1.ctor) {
+		var _p2 = msg;
+		switch (_p2.ctor) {
 			case 'NoOp':
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
@@ -8660,26 +8662,26 @@ var _jinjor$elm_debounce$Main$update = F2(
 					_elm_lang$core$Native_List.fromArray(
 						[]));
 			case 'Input':
-				var _p3 = _p1._0;
-				var _p2 = A3(_jinjor$elm_debounce$Debounce$push, _jinjor$elm_debounce$Main$debounceConfig, _p3, model.debounce);
-				var debounce = _p2._0;
-				var cmd = _p2._1;
+				var _p4 = _p2._0;
+				var _p3 = A3(_jinjor$elm_debounce$Debounce$push, _jinjor$elm_debounce$Main$debounceConfig, _p4, model.debounce);
+				var debounce = _p3._0;
+				var cmd = _p3._1;
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
 						model,
-						{value: _p3, debounce: debounce}),
+						{value: _p4, debounce: debounce}),
 					_elm_lang$core$Native_List.fromArray(
 						[cmd]));
 			case 'DebounceMsg':
-				var _p4 = A4(
+				var _p5 = A4(
 					_jinjor$elm_debounce$Debounce$update,
 					_jinjor$elm_debounce$Main$debounceConfig,
 					_jinjor$elm_debounce$Debounce$takeLast(_jinjor$elm_debounce$Main$save),
-					_p1._0,
+					_p2._0,
 					model.debounce);
-				var debounce = _p4._0;
-				var cmd = _p4._1;
+				var debounce = _p5._0;
+				var cmd = _p5._1;
 				return A2(
 					_elm_lang$core$Platform_Cmd_ops['!'],
 					_elm_lang$core$Native_Utils.update(
@@ -8693,10 +8695,12 @@ var _jinjor$elm_debounce$Main$update = F2(
 					_elm_lang$core$Native_Utils.update(
 						model,
 						{
-							report: A2(_elm_lang$core$List_ops['::'], _p1._0, model.report)
+							report: A2(_elm_lang$core$List_ops['::'], _p2._0, model.report)
 						}),
 					_elm_lang$core$Native_List.fromArray(
-						[]));
+						[
+							_jinjor$elm_debounce$Debounce$unlock(_jinjor$elm_debounce$Main$debounceConfig)
+						]));
 		}
 	});
 var _jinjor$elm_debounce$Main$main = {
