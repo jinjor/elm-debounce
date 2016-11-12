@@ -210,7 +210,6 @@ unlock : Config msg -> Cmd msg
 unlock config =
   Cmd.map config.transform <|
     Task.perform
-      (\_ -> NoOp)
       identity
       (Task.succeed (Flush Nothing))
 
@@ -245,4 +244,4 @@ push config a (Debounce d) =
 
 delayCmd : Time -> msg -> Cmd msg
 delayCmd delay msg =
-  Task.perform (\_ -> msg) (\_ -> msg) (Process.sleep delay)
+  Task.perform (\_ -> msg) (Process.sleep delay)

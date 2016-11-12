@@ -1,5 +1,4 @@
 import Html exposing (..)
-import Html.App as App
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Debounce exposing (Debounce)
@@ -8,9 +7,9 @@ import Task exposing (..)
 import Process
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-  App.program
+  program
     { init = init
     , view = view
     , update = update
@@ -89,10 +88,7 @@ update msg model =
 
 save : String -> Cmd Msg
 save s =
-  Task.perform
-    (\_ -> NoOp)
-    Saved
-    (Process.sleep second `andThen` \_ -> Task.succeed s)
+  Task.perform Saved (Process.sleep second |> Task.map (always s))
 
 
 subscriptions : Model -> Sub Msg
