@@ -44,6 +44,11 @@ type Debounce a =
     }
 
 
+length : Debounce a -> Int
+length (Debounce { input }) =
+  List.length input
+
+
 {-| Config contains the debouncing strategy and the message transformation.
 
 This config should be constant and shared between `update` function and `push` function.
@@ -62,7 +67,7 @@ type Strategy
   | Later Time
 
 
-{-| Send commands when it is manually unlocked. See `unlock`.
+{-| Send the first command immidiately, but not again until it gets unlocked manually. See `unlock`.
 
 Typically, `unlock` is called after previous response comes back.
 -}
@@ -126,8 +131,8 @@ init =
 -}
 type Msg
   = NoOp
-  | UnlockAndSend
-  | Delay Int
+  | Flush (Maybe Time)
+  | SendIfLengthNotChangedFrom Int
 
 
 {-| This is the component's update function following the Elm Architecture.
@@ -154,73 +159,43 @@ update config send msg (Debounce d) =
     NoOp ->
       (Debounce d) ! []
 
-    UnlockAndSend ->
+    Flush tryAgainAfter ->
       case d.input of
         head :: tail ->
           let
             (input, sendCmd) =
               send head tail
+
+            selfCmd =
+              case tryAgainAfter of
+                Just delay ->
+                  delayCmd delay (Flush (Just delay))
+
+                Nothing ->
+                  Cmd.none
           in
             Debounce
               { d
               | input = input
               , locked = True
-              } ! [ sendCmd ]
+              } ! [ sendCmd, Cmd.map config.transform selfCmd ]
 
         _ ->
           Debounce { d | locked = False } ! []
 
-    Delay len ->
-      case config.strategy of
-        Manual ->
-          case d.input of
-            head :: tail ->
-              let
-                (input, sendCmd) =
-                  send head tail
-              in
-                Debounce
-                  { d
-                  | input = input
-                  , locked = True
-                  } ! [ sendCmd ]
+    SendIfLengthNotChangedFrom lastInputLength ->
+      case (List.length d.input <= lastInputLength, d.input) of
+        (True, head :: tail) ->
+          let
+            (input, cmd) =
+              send head tail
+          in
+            ( Debounce { d | input = input }
+            , cmd
+            )
 
-            _ ->
-              Debounce d ! []
-
-        Soon _ delay ->
-          case d.input of
-            head :: tail ->
-              let
-                (input, sendCmd) =
-                  send head tail
-
-                selfCmd =
-                  Cmd.map config.transform
-                    (delayCmd delay (List.length d.input + 1))
-              in
-                Debounce
-                  { d
-                  | input = input
-                  , locked = True
-                  } ! [ sendCmd, selfCmd ]
-
-            _ ->
-              Debounce { d | locked = False } ! []
-
-        Later _ ->
-          case (List.length d.input <= len, d.input) of
-            (True, head :: tail) ->
-              let
-                (input, cmd) =
-                  send head tail
-              in
-                ( Debounce { d | input = input }
-                , cmd
-                )
-
-            _ ->
-              (Debounce d) ! []
+        _ ->
+          (Debounce d) ! []
 
 
 {-| Manually unlock. This works for `manual` Strategy.
@@ -231,46 +206,37 @@ unlock config =
     Task.perform
       (\_ -> NoOp)
       identity
-      (Task.succeed UnlockAndSend)
-
+      (Task.succeed (Flush Nothing))
 
 
 {-| Push a value into the debouncer.
 -}
 push : Config msg -> a -> Debounce a -> (Debounce a, Cmd msg)
 push config a (Debounce d) =
-  case config.strategy of
-    Manual ->
-      ( Debounce { d | input = a :: d.input }
-      , if d.locked then
-          Cmd.none
-        else
-          Cmd.map
-            config.transform
-            (delayCmd 0 (List.length d.input + 1))
-      )
+  let
+    newDebounce =
+      Debounce { d | input = a :: d.input }
 
-    Soon offset delay ->
-      ( Debounce { d | input = a :: d.input }
-      , if d.locked then
-          Cmd.none
-        else
-          Cmd.map
-            config.transform
-            (delayCmd offset (List.length d.input + 1))
-      )
+    selfCmd =
+      case config.strategy of
+        Manual ->
+          if d.locked then
+            Cmd.none
+          else
+            delayCmd 0 (Flush Nothing)
 
-    Later delay ->
-      ( Debounce { d | input = a :: d.input }
-      , Cmd.map
-          config.transform
-          (delayCmd delay (List.length d.input + 1))
-      )
+        Soon offset delay ->
+          if d.locked then
+            Cmd.none
+          else
+            delayCmd offset (Flush (Just delay))
+
+        Later delay ->
+          delayCmd delay (SendIfLengthNotChangedFrom (length newDebounce))
+  in
+    (newDebounce, Cmd.map config.transform selfCmd)
 
 
-delayCmd : Time -> Int -> Cmd Msg
-delayCmd delay inputCount =
-  Task.perform (\_ -> NoOp) Delay
-    ( Process.sleep delay `andThen` \_ ->
-      Task.succeed inputCount
-    )
+delayCmd : Time -> msg -> Cmd msg
+delayCmd delay msg =
+  Task.perform (\_ -> msg) (\_ -> msg) (Process.sleep delay)

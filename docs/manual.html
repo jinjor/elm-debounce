@@ -8317,6 +8317,18 @@ var _elm_lang$html$Html_Events$Options = F2(
 	function (a, b) {
 		return {stopPropagation: a, preventDefault: b};
 	});
+var _jinjor$elm_debounce$Debounce$delayCmd = F2(
+	function (delay, msg) {
+		return A3(
+			_elm_lang$core$Task$perform,
+			function (_p0) {
+				return msg;
+			},
+			function (_p1) {
+				return msg;
+			},
+			_elm_lang$core$Process$sleep(delay));
+	});
 var _jinjor$elm_debounce$Debounce$takeAll = F3(
 	function (send, head, tail) {
 		return {
@@ -8335,6 +8347,10 @@ var _jinjor$elm_debounce$Debounce$takeLast = F3(
 			_1: send(head)
 		};
 	});
+var _jinjor$elm_debounce$Debounce$length = function (_p2) {
+	var _p3 = _p2;
+	return _elm_lang$core$List$length(_p3._0.input);
+};
 var _jinjor$elm_debounce$Debounce$Config = F2(
 	function (a, b) {
 		return {strategy: a, transform: b};
@@ -8360,10 +8376,131 @@ var _jinjor$elm_debounce$Debounce$soon = _jinjor$elm_debounce$Debounce$Soon(0);
 var _jinjor$elm_debounce$Debounce$soonAfter = _jinjor$elm_debounce$Debounce$Soon;
 var _jinjor$elm_debounce$Debounce$Manual = {ctor: 'Manual'};
 var _jinjor$elm_debounce$Debounce$manual = _jinjor$elm_debounce$Debounce$Manual;
-var _jinjor$elm_debounce$Debounce$Delay = function (a) {
-	return {ctor: 'Delay', _0: a};
+var _jinjor$elm_debounce$Debounce$SendIfLengthNotChangedFrom = function (a) {
+	return {ctor: 'SendIfLengthNotChangedFrom', _0: a};
 };
-var _jinjor$elm_debounce$Debounce$UnlockAndSend = {ctor: 'UnlockAndSend'};
+var _jinjor$elm_debounce$Debounce$Flush = function (a) {
+	return {ctor: 'Flush', _0: a};
+};
+var _jinjor$elm_debounce$Debounce$update = F4(
+	function (config, send, msg, _p4) {
+		var _p5 = _p4;
+		var _p13 = _p5._0;
+		var _p6 = msg;
+		switch (_p6.ctor) {
+			case 'NoOp':
+				return A2(
+					_elm_lang$core$Platform_Cmd_ops['!'],
+					_jinjor$elm_debounce$Debounce$Debounce(_p13),
+					_elm_lang$core$Native_List.fromArray(
+						[]));
+			case 'Flush':
+				var _p7 = _p13.input;
+				if (_p7.ctor === '::') {
+					var selfCmd = function () {
+						var _p8 = _p6._0;
+						if (_p8.ctor === 'Just') {
+							var _p9 = _p8._0;
+							return A2(
+								_jinjor$elm_debounce$Debounce$delayCmd,
+								_p9,
+								_jinjor$elm_debounce$Debounce$Flush(
+									_elm_lang$core$Maybe$Just(_p9)));
+						} else {
+							return _elm_lang$core$Platform_Cmd$none;
+						}
+					}();
+					var _p10 = A2(send, _p7._0, _p7._1);
+					var input = _p10._0;
+					var sendCmd = _p10._1;
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_jinjor$elm_debounce$Debounce$Debounce(
+							_elm_lang$core$Native_Utils.update(
+								_p13,
+								{input: input, locked: true})),
+						_elm_lang$core$Native_List.fromArray(
+							[
+								sendCmd,
+								A2(_elm_lang$core$Platform_Cmd$map, config.transform, selfCmd)
+							]));
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_jinjor$elm_debounce$Debounce$Debounce(
+							_elm_lang$core$Native_Utils.update(
+								_p13,
+								{locked: false})),
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				}
+			default:
+				var _p11 = {
+					ctor: '_Tuple2',
+					_0: _elm_lang$core$Native_Utils.cmp(
+						_elm_lang$core$List$length(_p13.input),
+						_p6._0) < 1,
+					_1: _p13.input
+				};
+				if (((_p11.ctor === '_Tuple2') && (_p11._0 === true)) && (_p11._1.ctor === '::')) {
+					var _p12 = A2(send, _p11._1._0, _p11._1._1);
+					var input = _p12._0;
+					var cmd = _p12._1;
+					return {
+						ctor: '_Tuple2',
+						_0: _jinjor$elm_debounce$Debounce$Debounce(
+							_elm_lang$core$Native_Utils.update(
+								_p13,
+								{input: input})),
+						_1: cmd
+					};
+				} else {
+					return A2(
+						_elm_lang$core$Platform_Cmd_ops['!'],
+						_jinjor$elm_debounce$Debounce$Debounce(_p13),
+						_elm_lang$core$Native_List.fromArray(
+							[]));
+				}
+		}
+	});
+var _jinjor$elm_debounce$Debounce$push = F3(
+	function (config, a, _p14) {
+		var _p15 = _p14;
+		var _p17 = _p15._0;
+		var newDebounce = _jinjor$elm_debounce$Debounce$Debounce(
+			_elm_lang$core$Native_Utils.update(
+				_p17,
+				{
+					input: A2(_elm_lang$core$List_ops['::'], a, _p17.input)
+				}));
+		var selfCmd = function () {
+			var _p16 = config.strategy;
+			switch (_p16.ctor) {
+				case 'Manual':
+					return _p17.locked ? _elm_lang$core$Platform_Cmd$none : A2(
+						_jinjor$elm_debounce$Debounce$delayCmd,
+						0,
+						_jinjor$elm_debounce$Debounce$Flush(_elm_lang$core$Maybe$Nothing));
+				case 'Soon':
+					return _p17.locked ? _elm_lang$core$Platform_Cmd$none : A2(
+						_jinjor$elm_debounce$Debounce$delayCmd,
+						_p16._0,
+						_jinjor$elm_debounce$Debounce$Flush(
+							_elm_lang$core$Maybe$Just(_p16._1)));
+				default:
+					return A2(
+						_jinjor$elm_debounce$Debounce$delayCmd,
+						_p16._0,
+						_jinjor$elm_debounce$Debounce$SendIfLengthNotChangedFrom(
+							_jinjor$elm_debounce$Debounce$length(newDebounce)));
+			}
+		}();
+		return {
+			ctor: '_Tuple2',
+			_0: newDebounce,
+			_1: A2(_elm_lang$core$Platform_Cmd$map, config.transform, selfCmd)
+		};
+	});
 var _jinjor$elm_debounce$Debounce$NoOp = {ctor: 'NoOp'};
 var _jinjor$elm_debounce$Debounce$unlock = function (config) {
 	return A2(
@@ -8371,207 +8508,13 @@ var _jinjor$elm_debounce$Debounce$unlock = function (config) {
 		config.transform,
 		A3(
 			_elm_lang$core$Task$perform,
-			function (_p0) {
+			function (_p18) {
 				return _jinjor$elm_debounce$Debounce$NoOp;
 			},
 			_elm_lang$core$Basics$identity,
-			_elm_lang$core$Task$succeed(_jinjor$elm_debounce$Debounce$UnlockAndSend)));
+			_elm_lang$core$Task$succeed(
+				_jinjor$elm_debounce$Debounce$Flush(_elm_lang$core$Maybe$Nothing))));
 };
-var _jinjor$elm_debounce$Debounce$delayCmd = F2(
-	function (delay, inputCount) {
-		return A3(
-			_elm_lang$core$Task$perform,
-			function (_p1) {
-				return _jinjor$elm_debounce$Debounce$NoOp;
-			},
-			_jinjor$elm_debounce$Debounce$Delay,
-			A2(
-				_elm_lang$core$Task$andThen,
-				_elm_lang$core$Process$sleep(delay),
-				function (_p2) {
-					return _elm_lang$core$Task$succeed(inputCount);
-				}));
-	});
-var _jinjor$elm_debounce$Debounce$update = F4(
-	function (config, send, msg, _p3) {
-		var _p4 = _p3;
-		var _p15 = _p4._0;
-		var _p5 = msg;
-		switch (_p5.ctor) {
-			case 'NoOp':
-				return A2(
-					_elm_lang$core$Platform_Cmd_ops['!'],
-					_jinjor$elm_debounce$Debounce$Debounce(_p15),
-					_elm_lang$core$Native_List.fromArray(
-						[]));
-			case 'UnlockAndSend':
-				var _p6 = _p15.input;
-				if (_p6.ctor === '::') {
-					var _p7 = A2(send, _p6._0, _p6._1);
-					var input = _p7._0;
-					var sendCmd = _p7._1;
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_jinjor$elm_debounce$Debounce$Debounce(
-							_elm_lang$core$Native_Utils.update(
-								_p15,
-								{input: input, locked: true})),
-						_elm_lang$core$Native_List.fromArray(
-							[sendCmd]));
-				} else {
-					return A2(
-						_elm_lang$core$Platform_Cmd_ops['!'],
-						_jinjor$elm_debounce$Debounce$Debounce(
-							_elm_lang$core$Native_Utils.update(
-								_p15,
-								{locked: false})),
-						_elm_lang$core$Native_List.fromArray(
-							[]));
-				}
-			default:
-				var _p8 = config.strategy;
-				switch (_p8.ctor) {
-					case 'Manual':
-						var _p9 = _p15.input;
-						if (_p9.ctor === '::') {
-							var _p10 = A2(send, _p9._0, _p9._1);
-							var input = _p10._0;
-							var sendCmd = _p10._1;
-							return A2(
-								_elm_lang$core$Platform_Cmd_ops['!'],
-								_jinjor$elm_debounce$Debounce$Debounce(
-									_elm_lang$core$Native_Utils.update(
-										_p15,
-										{input: input, locked: true})),
-								_elm_lang$core$Native_List.fromArray(
-									[sendCmd]));
-						} else {
-							return A2(
-								_elm_lang$core$Platform_Cmd_ops['!'],
-								_jinjor$elm_debounce$Debounce$Debounce(_p15),
-								_elm_lang$core$Native_List.fromArray(
-									[]));
-						}
-					case 'Soon':
-						var _p11 = _p15.input;
-						if (_p11.ctor === '::') {
-							var selfCmd = A2(
-								_elm_lang$core$Platform_Cmd$map,
-								config.transform,
-								A2(
-									_jinjor$elm_debounce$Debounce$delayCmd,
-									_p8._1,
-									_elm_lang$core$List$length(_p15.input) + 1));
-							var _p12 = A2(send, _p11._0, _p11._1);
-							var input = _p12._0;
-							var sendCmd = _p12._1;
-							return A2(
-								_elm_lang$core$Platform_Cmd_ops['!'],
-								_jinjor$elm_debounce$Debounce$Debounce(
-									_elm_lang$core$Native_Utils.update(
-										_p15,
-										{input: input, locked: true})),
-								_elm_lang$core$Native_List.fromArray(
-									[sendCmd, selfCmd]));
-						} else {
-							return A2(
-								_elm_lang$core$Platform_Cmd_ops['!'],
-								_jinjor$elm_debounce$Debounce$Debounce(
-									_elm_lang$core$Native_Utils.update(
-										_p15,
-										{locked: false})),
-								_elm_lang$core$Native_List.fromArray(
-									[]));
-						}
-					default:
-						var _p13 = {
-							ctor: '_Tuple2',
-							_0: _elm_lang$core$Native_Utils.cmp(
-								_elm_lang$core$List$length(_p15.input),
-								_p5._0) < 1,
-							_1: _p15.input
-						};
-						if (((_p13.ctor === '_Tuple2') && (_p13._0 === true)) && (_p13._1.ctor === '::')) {
-							var _p14 = A2(send, _p13._1._0, _p13._1._1);
-							var input = _p14._0;
-							var cmd = _p14._1;
-							return {
-								ctor: '_Tuple2',
-								_0: _jinjor$elm_debounce$Debounce$Debounce(
-									_elm_lang$core$Native_Utils.update(
-										_p15,
-										{input: input})),
-								_1: cmd
-							};
-						} else {
-							return A2(
-								_elm_lang$core$Platform_Cmd_ops['!'],
-								_jinjor$elm_debounce$Debounce$Debounce(_p15),
-								_elm_lang$core$Native_List.fromArray(
-									[]));
-						}
-				}
-		}
-	});
-var _jinjor$elm_debounce$Debounce$push = F3(
-	function (config, a, _p16) {
-		var _p17 = _p16;
-		var _p19 = _p17._0;
-		var _p18 = config.strategy;
-		switch (_p18.ctor) {
-			case 'Manual':
-				return {
-					ctor: '_Tuple2',
-					_0: _jinjor$elm_debounce$Debounce$Debounce(
-						_elm_lang$core$Native_Utils.update(
-							_p19,
-							{
-								input: A2(_elm_lang$core$List_ops['::'], a, _p19.input)
-							})),
-					_1: _p19.locked ? _elm_lang$core$Platform_Cmd$none : A2(
-						_elm_lang$core$Platform_Cmd$map,
-						config.transform,
-						A2(
-							_jinjor$elm_debounce$Debounce$delayCmd,
-							0,
-							_elm_lang$core$List$length(_p19.input) + 1))
-				};
-			case 'Soon':
-				return {
-					ctor: '_Tuple2',
-					_0: _jinjor$elm_debounce$Debounce$Debounce(
-						_elm_lang$core$Native_Utils.update(
-							_p19,
-							{
-								input: A2(_elm_lang$core$List_ops['::'], a, _p19.input)
-							})),
-					_1: _p19.locked ? _elm_lang$core$Platform_Cmd$none : A2(
-						_elm_lang$core$Platform_Cmd$map,
-						config.transform,
-						A2(
-							_jinjor$elm_debounce$Debounce$delayCmd,
-							_p18._0,
-							_elm_lang$core$List$length(_p19.input) + 1))
-				};
-			default:
-				return {
-					ctor: '_Tuple2',
-					_0: _jinjor$elm_debounce$Debounce$Debounce(
-						_elm_lang$core$Native_Utils.update(
-							_p19,
-							{
-								input: A2(_elm_lang$core$List_ops['::'], a, _p19.input)
-							})),
-					_1: A2(
-						_elm_lang$core$Platform_Cmd$map,
-						config.transform,
-						A2(
-							_jinjor$elm_debounce$Debounce$delayCmd,
-							_p18._0,
-							_elm_lang$core$List$length(_p19.input) + 1))
-				};
-		}
-	});
 var _jinjor$elm_debounce$Main$report = function (s) {
 	return A2(
 		_elm_lang$html$Html$li,
