@@ -1,7 +1,7 @@
 module Debounce exposing
   ( Debounce, Msg
   , Config, init
-  , Strategy, soon, soonAfter, later, manual
+  , Strategy, soon, soonAfter, later, manual, manualAfter
   , Send, takeLast, takeAll
   , update, push, unlock
   )
@@ -18,7 +18,7 @@ module Debounce exposing
 @docs Config, init
 
 # Strategies
-@docs Strategy, soon, soonAfter, later, manual
+@docs Strategy, soon, soonAfter, later, manual, manualAfter
 
 # Sending Commands
 @docs Send, takeLast, takeAll
@@ -62,17 +62,9 @@ type alias Config msg =
 {-| Strategy defines the timing when commands are sent.
 -}
 type Strategy
-  = Manual
+  = Manual Time
   | Soon Time Time
   | Later Time
-
-
-{-| Send the first command immidiately, but not again until it gets unlocked manually. See `unlock`.
-
-Typically, `unlock` is called after previous response comes back.
--}
-manual : Strategy
-manual = Manual
 
 
 {-| Send command as soon as it gets ready, with given rate limit. (a.k.a. Throttle)
@@ -83,7 +75,7 @@ soon : Time -> Strategy
 soon = Soon 0
 
 
-{-| Similar to `soon`, but send first command after offset time.
+{-| Similar to `soon`, but the first command is sent after offset time.
 -}
 soonAfter : Time -> Time -> Strategy
 soonAfter = Soon
@@ -93,6 +85,20 @@ soonAfter = Soon
 -}
 later : Time -> Strategy
 later = Later
+
+
+{-| Send command as soon as it gets ready, but not again until it gets unlocked manually. See `unlock`.
+
+Typically, `unlock` is called after previous response comes back.
+-}
+manual : Strategy
+manual = Manual 0
+
+
+{-| Similar to `manual`, but the first command is sent after offset time.
+-}
+manualAfter : Time -> Strategy
+manualAfter = Manual
 
 
 {-| This function consumes values and send a command.
@@ -198,7 +204,7 @@ update config send msg (Debounce d) =
           (Debounce d) ! []
 
 
-{-| Manually unlock. This works for `manual` Strategy.
+{-| Manually unlock. This works for `manual` or `manualAfter` Strategy.
 -}
 unlock : Config msg -> Cmd msg
 unlock config =
@@ -219,11 +225,11 @@ push config a (Debounce d) =
 
     selfCmd =
       case config.strategy of
-        Manual ->
+        Manual offset ->
           if d.locked then
             Cmd.none
           else
-            delayCmd 0 (Flush Nothing)
+            delayCmd offset (Flush Nothing)
 
         Soon offset delay ->
           if d.locked then

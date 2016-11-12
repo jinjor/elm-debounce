@@ -8374,8 +8374,11 @@ var _jinjor$elm_debounce$Debounce$Soon = F2(
 	});
 var _jinjor$elm_debounce$Debounce$soon = _jinjor$elm_debounce$Debounce$Soon(0);
 var _jinjor$elm_debounce$Debounce$soonAfter = _jinjor$elm_debounce$Debounce$Soon;
-var _jinjor$elm_debounce$Debounce$Manual = {ctor: 'Manual'};
-var _jinjor$elm_debounce$Debounce$manual = _jinjor$elm_debounce$Debounce$Manual;
+var _jinjor$elm_debounce$Debounce$Manual = function (a) {
+	return {ctor: 'Manual', _0: a};
+};
+var _jinjor$elm_debounce$Debounce$manual = _jinjor$elm_debounce$Debounce$Manual(0);
+var _jinjor$elm_debounce$Debounce$manualAfter = _jinjor$elm_debounce$Debounce$Manual;
 var _jinjor$elm_debounce$Debounce$SendIfLengthNotChangedFrom = function (a) {
 	return {ctor: 'SendIfLengthNotChangedFrom', _0: a};
 };
@@ -8479,7 +8482,7 @@ var _jinjor$elm_debounce$Debounce$push = F3(
 				case 'Manual':
 					return _p17.locked ? _elm_lang$core$Platform_Cmd$none : A2(
 						_jinjor$elm_debounce$Debounce$delayCmd,
-						0,
+						_p16._0,
 						_jinjor$elm_debounce$Debounce$Flush(_elm_lang$core$Maybe$Nothing));
 				case 'Soon':
 					return _p17.locked ? _elm_lang$core$Platform_Cmd$none : A2(
