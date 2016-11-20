@@ -1,108 +1,118 @@
-import Html exposing (..)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
+module Main exposing (..)
+
+import Html as H exposing (Html)
+import Html.Attributes as HA
+import Html.Events as HE
 import Debounce exposing (Debounce)
-import Time exposing (..)
-import Task exposing (..)
+import Time exposing (Time)
+import Task exposing (Task)
 
 
-main : Program Never Model Msg
 main =
-  program
-    { init = init
-    , view = view
-    , update = update
-    , subscriptions = subscriptions
+    H.program
+        { init = init
+        , view = view
+        , update = update
+        , subscriptions = always Sub.none
+        }
+
+
+{-| The model contains a report (a `List`) of each time the debouncer settled on a value.
+It also contains a string debouncer (`Debounce String`) which is the object manipulated.
+by the `Debounce` module.
+-}
+type alias Model =
+    { debounce : Debounce String
+    , report : List String
     }
 
 
-type alias Model =
-  { value : String
-  , debounce : Debounce String
-  , report : List String
-  }
-
-
+{-| Initialize the debouncer and the report.
+-}
 init : ( Model, Cmd Msg )
 init =
-  { value = ""
-  -- Initialize the debouncer.
-  , debounce = Debounce.init
-  , report = []
-  } ! []
+    { debounce = Debounce.init
+    , report = []
+    }
+        ! []
 
 
+{-| The debouncing mechanism requires the addition of two messages:
+* Saved String: for when the debounced string value settled.
+* DebounceMsg Debounce.Msg: for the module internal messages.
+-}
 type Msg
-  = NoOp
-  | Input String
-  | Saved String
-  | DebounceMsg Debounce.Msg
+    = Input String
+    | Saved String
+    | DebounceMsg Debounce.Msg
 
 
--- This defines how the debouncer should work.
--- Choose the strategy for your use case.
+{-| This defines how the debouncer should work.
+Choose the strategy for your use case.
+Thes most common stategies are:
+* For debouncing: later duration
+* For throttle: soon duration
+* For manual control: manual
+-}
 debounceConfig : Debounce.Config Msg
 debounceConfig =
-  { strategy = Debounce.later (1 * second)
-  , transform = DebounceMsg
-  }
+    { strategy = Debounce.later (1 * Time.second)
+    , transform = DebounceMsg
+    }
 
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-  case msg of
-    NoOp ->
-      model ! []
+    case msg of
+        -- Previously, this was where the Input message was handled.
+        -- Now the Input message is redirected (using Debounce.push)
+        -- to the Debounce module that will handle it.
+        Input str ->
+            let
+                ( debounce, cmd ) =
+                    Debounce.push debounceConfig str model.debounce
+            in
+                { model | debounce = debounce } ! [ cmd ]
 
-    Input s ->
-      let
-        -- Push your values here.
-        (debounce, cmd) =
-          Debounce.push debounceConfig s model.debounce
-      in
-        { model
-        | value = s
-        , debounce = debounce
-        } ! [ cmd ]
+        -- Now this is where we handle the value that the debouncer give us.
+        -- In this example, we just add it to the report.
+        Saved str ->
+            { model | report = str :: model.report } ! []
 
-    -- This is where commands are actually sent.
-    -- The logic can be dependent on the current model.
-    -- You can also use all the accumulated values.
-    DebounceMsg msg ->
-      let
-        (debounce, cmd) =
-          Debounce.update
-            debounceConfig
-            (Debounce.takeLast save)
-            msg
-            model.debounce
-      in
-        { model | debounce = debounce } ! [ cmd ]
-
-    Saved s ->
-      { model
-      | report = s :: model.report
-      } ! []
+        -- This is where commands are actually processed by Debounce.update.
+        -- The second argument of Debounce.update `(Debounce.takeLast save)`
+        -- defines the method to retrieve the debounced values later.
+        -- Here it means that we want to keep only the last value (Debounce.takeLast)
+        -- and that we will make a `Saved String` Cmd Msg of it thanks to `save`.
+        -- You could choose to use all the values since last time with Debounce.takeAll,
+        -- providing that the `save` function and `Saved` msg have compatible types.
+        DebounceMsg debounceMsg ->
+            let
+                ( debounce, cmd ) =
+                    Debounce.update
+                        debounceConfig
+                        (Debounce.takeLast save)
+                        debounceMsg
+                        model.debounce
+            in
+                { model | debounce = debounce } ! [ cmd ]
 
 
+{-| Make a `Saved String` Cmd Msg to handle the debounced value.
+-}
 save : String -> Cmd Msg
-save s =
-  Task.perform Saved (Task.succeed s)
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-  Sub.none
+save str =
+    Task.perform Saved (Task.succeed str)
 
 
 view : Model -> Html Msg
 view model =
-  div []
-    [ input [ value model.value, onInput Input ] []
-    , ul [] (List.map report (List.reverse model.report))
-    ]
+    H.div []
+        [ H.input [ HE.onInput Input ] []
+        , H.ul [] (List.map report (List.reverse model.report))
+        ]
 
 
 report : String -> Html msg
-report s =
-  li [] [ text (toString s) ]
+report str =
+    H.li [] [ H.text (toString str) ]
