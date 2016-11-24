@@ -2,8 +2,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Debounce exposing (Debounce)
-import Time exposing (..)
-import Task exposing (..)
+import Time
+import Task
 import Process
 
 
@@ -27,24 +27,20 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
   { value = ""
-  -- Initialize the debouncer.
   , debounce = Debounce.init
   , report = []
   } ! []
 
 
 type Msg
-  = NoOp
-  | Input String
+  = Input String
   | Saved String
   | DebounceMsg Debounce.Msg
 
 
--- This defines how the debouncer should work.
--- Choose the strategy for your use case.
 debounceConfig : Debounce.Config Msg
 debounceConfig =
-  { strategy = Debounce.manual
+  { strategy = Debounce.manual -- choose `manual` strategy
   , transform = DebounceMsg
   }
 
@@ -52,23 +48,16 @@ debounceConfig =
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NoOp ->
-      model ! []
-
-    Input s ->
+    Input value ->
       let
-        -- Push your values here.
         (debounce, cmd) =
-          Debounce.push debounceConfig s model.debounce
+          Debounce.push debounceConfig value model.debounce
       in
         { model
-        | value = s
-        , debounce = debounce
+          | value = value
+          , debounce = debounce
         } ! [ cmd ]
 
-    -- This is where commands are actually sent.
-    -- The logic can be dependent on the current model.
-    -- You can also use all the accumulated values.
     DebounceMsg msg ->
       let
         (debounce, cmd) =
@@ -80,15 +69,20 @@ update msg model =
       in
         { model | debounce = debounce } ! [ cmd ]
 
-    Saved s ->
+    -- After response (from server) arrived,
+    -- you need to manually unlock the debouncer
+    -- which flushes all the values accumulated at the time.
+    Saved value ->
       { model
-      | report = s :: model.report
-      } ! [ Debounce.unlock debounceConfig ] -- Manually unlock.
+        | report = value :: model.report
+      } ! [ Debounce.unlock debounceConfig ]
 
 
 save : String -> Cmd Msg
-save s =
-  Task.perform Saved (Process.sleep second |> Task.map (always s))
+save value =
+  Process.sleep Time.second
+    |> Task.map (always value)
+    |> Task.perform Saved
 
 
 subscriptions : Model -> Sub Msg
@@ -105,5 +99,5 @@ view model =
 
 
 report : String -> Html msg
-report s =
-  li [] [ text (toString s) ]
+report value =
+  li [] [ text (toString value) ]
