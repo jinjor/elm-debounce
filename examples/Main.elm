@@ -2,8 +2,8 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Debounce exposing (Debounce)
-import Time exposing (..)
-import Task exposing (..)
+import Time
+import Task
 
 
 main : Program Never Model Msg
@@ -18,7 +18,7 @@ main =
 
 type alias Model =
   { value : String
-  , debounce : Debounce String
+  , debounce : Debounce String -- Deboucer that processes String values
   , report : List String
   }
 
@@ -33,61 +33,58 @@ init =
 
 
 type Msg
-  = NoOp
-  | Input String
-  | Saved String
+  = Input String
   | DebounceMsg Debounce.Msg
+  | Saved String
 
 
 -- This defines how the debouncer should work.
 -- Choose the strategy for your use case.
 debounceConfig : Debounce.Config Msg
 debounceConfig =
-  { strategy = Debounce.later (1 * second)
-  , transform = DebounceMsg
+  { strategy = Debounce.later (1 * Time.second) -- 1s after getting stable
+  , transform = DebounceMsg                     -- pass Msg wrapper
   }
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    NoOp ->
-      model ! []
-
-    Input s ->
+    Input value ->
       let
-        -- Push your values here.
+        -- Push your values. They are not immediately processed.
         (debounce, cmd) =
-          Debounce.push debounceConfig s model.debounce
+          Debounce.push debounceConfig value model.debounce
       in
         { model
-        | value = s
-        , debounce = debounce
+          | value = value
+          , debounce = debounce
         } ! [ cmd ]
 
-    -- This is where commands are actually sent.
-    -- The logic can be dependent on the current model.
-    -- You can also use all the accumulated values.
+    -- This is where debounced values are processed and sent as Cmd.
+    -- All the accumulated values are available here.
+    -- You can choose how to reduce them.
     DebounceMsg msg ->
       let
         (debounce, cmd) =
           Debounce.update
             debounceConfig
-            (Debounce.takeLast save)
+            (Debounce.takeLast save) -- save the last value
             msg
             model.debounce
       in
         { model | debounce = debounce } ! [ cmd ]
 
-    Saved s ->
+    Saved value ->
       { model
-      | report = s :: model.report
+        | report = value :: model.report
       } ! []
 
 
 save : String -> Cmd Msg
-save s =
-  Task.perform Saved (Task.succeed s)
+save value =
+  Task.succeed value
+    |> Task.perform Saved
 
 
 subscriptions : Model -> Sub Msg
@@ -104,5 +101,5 @@ view model =
 
 
 report : String -> Html msg
-report s =
-  li [] [ text (toString s) ]
+report value =
+  li [] [ text (toString value) ]
