@@ -62,6 +62,63 @@ update msg model =
     ...
 ```
 
+### Multiple Debouncers
+
+If you need to debounce multiple event sources, one approach is to repeat the pattern demonstrated above for each event source. For example, you could define a debouncer and debounce msg for each:
+
+```elm
+init : ( Model, Cmd Msg )
+init =
+  { value = ""
+  -- Initialize *multiple* debouncers.
+  , fooDebouncer = Debounce.init
+  , barDeboucner = Debounce.init
+  , report = []
+  } ! []
+
+type Msg
+  = InputFoo String
+  | InputBar String
+  | DebounceFoo Debounce.Msg
+  | DebounceBar Debounce.Msg
+```
+
+You can choose to either have different configs for each event source:
+
+```elm
+fooDebounceConfig : Debounce.Config Msg
+fooDebounceConfig =
+  { strategy = Debounce.later (1 * second)
+  , transform = DebounceFoo
+  }
+
+barDebounceConfig : Debounce.Config Msg
+barDebounceConfig =
+  { strategy = Debounce.manual
+  , transform = DebounceBar
+  }
+
+```
+
+Or to use the same config for both:
+
+```elm
+debounceConfig : (Debounce.Msg -> Msg) -> Debounce.Config Msg
+debounceConfig debounceMsg =
+    { strategy = Debounce.later (1 * second)
+    , transform = debounceMsg
+    }
+```
+
+Note that the above config function takes your specific debounce msg as it's argument, so for example you might do the following:
+
+```elm
+Debounce.push (debounceConfig DebounceFoo) fooValue model.fooDebouncer
+```
+
+A full example of this approach can be seen [here](https://github.com/jinjor/elm-debounce/blob/master/examples/MultipleDebouncers.elm).
+
+
 ## LICENSE
 
 BSD3
