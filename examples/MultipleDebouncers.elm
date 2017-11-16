@@ -1,11 +1,11 @@
 module MultipleDebouncers exposing (..)
 
+import Debounce exposing (Debounce)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-import Debounce exposing (Debounce)
-import Time exposing (..)
 import Task exposing (..)
+import Time exposing (..)
 
 
 main : Program Never Model Msg
@@ -68,11 +68,11 @@ update msg model =
                         name
                         model.nameDebouncer
             in
-                { model
-                    | name = name
-                    , nameDebouncer = newDebouncer
-                }
-                    ! [ cmd ]
+            { model
+                | name = name
+                , nameDebouncer = newDebouncer
+            }
+                ! [ cmd ]
 
         InputNickname nickname ->
             let
@@ -82,11 +82,11 @@ update msg model =
                         nickname
                         model.nicknameDebouncer
             in
-                { model
-                    | nickname = nickname
-                    , nicknameDebouncer = newDebouncer
-                }
-                    ! [ cmd ]
+            { model
+                | nickname = nickname
+                , nicknameDebouncer = newDebouncer
+            }
+                ! [ cmd ]
 
         DebounceName msg ->
             let
@@ -97,7 +97,7 @@ update msg model =
                         msg
                         model.nameDebouncer
             in
-                { model | nameDebouncer = newDebouncer } ! [ cmd ]
+            { model | nameDebouncer = newDebouncer } ! [ cmd ]
 
         DebounceNickname msg ->
             let
@@ -108,7 +108,7 @@ update msg model =
                         msg
                         model.nicknameDebouncer
             in
-                { model | nicknameDebouncer = newDebouncer } ! [ cmd ]
+            { model | nicknameDebouncer = newDebouncer } ! [ cmd ]
 
         Saved s ->
             { model | report = s :: model.report } ! []
