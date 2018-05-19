@@ -1,18 +1,18 @@
 module Main exposing (..)
 
+import Browser
 import Debounce exposing (Debounce)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Process
 import Task exposing (..)
-import Time exposing (..)
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    program
-        { init = init
+    Browser.embed
+        { init = \_ -> init
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -28,11 +28,12 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    { value = ""
-    , debounce = Debounce.init -- Initialize the debouncer.
-    , report = []
-    }
-        ! []
+    ( { value = ""
+      , debounce = Debounce.init -- Initialize the debouncer.
+      , report = []
+      }
+    , Cmd.none
+    )
 
 
 type Msg
@@ -56,7 +57,9 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
-            model ! []
+            ( model
+            , Cmd.none
+            )
 
         Input s ->
             let
@@ -64,37 +67,41 @@ update msg model =
                 ( debounce, cmd ) =
                     Debounce.push debounceConfig s model.debounce
             in
-            { model
+            ( { model
                 | value = s
                 , debounce = debounce
-            }
-                ! [ cmd ]
+              }
+            , cmd
+            )
 
         -- This is where commands are actually sent.
         -- The logic can be dependent on the current model.
         -- You can also use all the accumulated values.
-        DebounceMsg msg ->
+        DebounceMsg msg_ ->
             let
                 ( debounce, cmd ) =
                     Debounce.update
                         debounceConfig
                         (Debounce.takeLast save)
-                        msg
+                        msg_
                         model.debounce
             in
-            { model | debounce = debounce } ! [ cmd ]
+            ( { model | debounce = debounce }
+            , cmd
+            )
 
         Saved s ->
-            { model
+            ( { model
                 | report = s :: model.report
-            }
-                -- Manually unlock.
-                ! [ Debounce.unlock debounceConfig ]
+              }
+              -- Manually unlock.
+            , Debounce.unlock debounceConfig
+            )
 
 
 save : String -> Cmd Msg
 save s =
-    Task.perform Saved (Process.sleep second |> Task.map (always s))
+    Task.perform Saved (Process.sleep 1000 |> Task.map (always s))
 
 
 subscriptions : Model -> Sub Msg
@@ -112,4 +119,4 @@ view model =
 
 report : String -> Html msg
 report s =
-    li [] [ text (toString s) ]
+    li [] [ text s ]

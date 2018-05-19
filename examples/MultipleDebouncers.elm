@@ -1,17 +1,17 @@
 module MultipleDebouncers exposing (..)
 
+import Browser
 import Debounce exposing (Debounce)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Task exposing (..)
-import Time exposing (..)
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    program
-        { init = init
+    Browser.embed
+        { init = \_ -> init
         , view = view
         , update = update
         , subscriptions = subscriptions
@@ -29,13 +29,14 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    { name = ""
-    , nickname = ""
-    , nameDebouncer = Debounce.init
-    , nicknameDebouncer = Debounce.init
-    , report = []
-    }
-        ! []
+    ( { name = ""
+      , nickname = ""
+      , nameDebouncer = Debounce.init
+      , nicknameDebouncer = Debounce.init
+      , report = []
+      }
+    , Cmd.none
+    )
 
 
 type Msg
@@ -49,7 +50,7 @@ type Msg
 
 debounceConfig : (Debounce.Msg -> Msg) -> Debounce.Config Msg
 debounceConfig debounceMsg =
-    { strategy = Debounce.later (1 * second)
+    { strategy = Debounce.later 1000
     , transform = debounceMsg
     }
 
@@ -58,7 +59,9 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         NoOp ->
-            model ! []
+            ( model
+            , Cmd.none
+            )
 
         InputName name ->
             let
@@ -68,11 +71,12 @@ update msg model =
                         name
                         model.nameDebouncer
             in
-            { model
+            ( { model
                 | name = name
                 , nameDebouncer = newDebouncer
-            }
-                ! [ cmd ]
+              }
+            , cmd
+            )
 
         InputNickname nickname ->
             let
@@ -82,36 +86,43 @@ update msg model =
                         nickname
                         model.nicknameDebouncer
             in
-            { model
+            ( { model
                 | nickname = nickname
                 , nicknameDebouncer = newDebouncer
-            }
-                ! [ cmd ]
+              }
+            , cmd
+            )
 
-        DebounceName msg ->
+        DebounceName msg_ ->
             let
                 ( newDebouncer, cmd ) =
                     Debounce.update
                         (debounceConfig DebounceName)
                         (Debounce.takeLast save)
-                        msg
+                        msg_
                         model.nameDebouncer
             in
-            { model | nameDebouncer = newDebouncer } ! [ cmd ]
+            ( { model | nameDebouncer = newDebouncer }
+            , cmd
+            )
 
-        DebounceNickname msg ->
+        DebounceNickname msg_ ->
             let
                 ( newDebouncer, cmd ) =
                     Debounce.update
                         (debounceConfig DebounceNickname)
                         (Debounce.takeLast save)
-                        msg
+                        msg_
                         model.nicknameDebouncer
             in
-            { model | nicknameDebouncer = newDebouncer } ! [ cmd ]
+            ( { model | nicknameDebouncer = newDebouncer }
+            , cmd
+            )
 
         Saved s ->
-            { model | report = s :: model.report } ! []
+            ( { model | report = s :: model.report }
+            , Cmd.none
+            )
 
 
 save : String -> Cmd Msg
@@ -137,4 +148,4 @@ view model =
 
 report : String -> Html msg
 report s =
-    li [] [ text (toString s) ]
+    li [] [ text s ]

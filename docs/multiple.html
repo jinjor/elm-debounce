@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Main</title>
+  <title>MultipleDebouncers</title>
 </head>
 
 <body>
@@ -513,11 +513,11 @@ function _Error_throw_UNUSED(identifier, fact1, fact2, fact3, fact4)
 
 function _Error_regionToString(region)
 {
-	if (region.L.y === region.O.y)
+	if (region.O.A === region.R.A)
 	{
-		return 'on line ' + region.L.y;
+		return 'on line ' + region.O.A;
 	}
-	return 'on lines ' + region.L.y + ' through ' + region.O.y;
+	return 'on lines ' + region.O.A + ' through ' + region.R.A;
 }
 
 function _Error_dictBug()
@@ -1474,9 +1474,9 @@ var _Platform_worker = F4(function(impl, flagDecoder, debugMetadata, object)
 		return _Platform_initialize(
 			flagDecoder,
 			flags,
-			impl.ah,
+			impl.ak,
+			impl.aq,
 			impl.ao,
-			impl.am,
 			function() { return function() {} }
 		);
 	};
@@ -2294,9 +2294,9 @@ var _VirtualDom_mapEventTuple = F2(function(func, tuple)
 var _VirtualDom_mapEventRecord = F2(function(func, record)
 {
 	return {
-		k: _VirtualDom_mapTimed(func, record.k),
-		_: record._,
-		W: record.W
+		l: _VirtualDom_mapTimed(func, record.l),
+		ac: record.ac,
+		Z: record.Z
 	}
 });
 
@@ -2597,10 +2597,10 @@ function _VirtualDom_eventToTimedMsg(event, tag, value)
 		return value;
 	}
 
-	if (tag === 1 ? value.b : tag === 3 && value._) event.stopPropagation();
-	if (tag === 2 ? value.b : tag === 3 && value.W) event.preventDefault();
+	if (tag === 1 ? value.b : tag === 3 && value.ac) event.stopPropagation();
+	if (tag === 2 ? value.b : tag === 3 && value.Z) event.preventDefault();
 
-	return tag < 3 ? value.a : value.k;
+	return tag < 3 ? value.a : value.l;
 }
 
 
@@ -3613,10 +3613,10 @@ var _Browser_embed = _Debugger_embed || F4(function(impl, flagDecoder, debugMeta
 		return _Platform_initialize(
 			flagDecoder,
 			flags,
-			impl.ah,
+			impl.ak,
+			impl.aq,
 			impl.ao,
-			impl.am,
-			_Browser_makeStepperBuilder(node, impl.ap)
+			_Browser_makeStepperBuilder(node, impl.ar)
 		);
 	};
 	return object;
@@ -3631,16 +3631,16 @@ var _Browser_fullscreen = _Debugger_fullscreen || F4(function(impl, flagDecoder,
 		return _Platform_initialize(
 			A2(elm_lang$json$Json$Decode$map, _Browser_toEnv, flagDecoder),
 			flags,
-			impl.ah,
+			impl.ak,
+			impl.aq,
 			impl.ao,
-			impl.am,
 			_Browser_makeStepperBuilder(_VirtualDom_doc.body, function(model) {
-				var ui = impl.ap(model);
-				if (_VirtualDom_doc.title !== ui.an)
+				var ui = impl.ar(model);
+				if (_VirtualDom_doc.title !== ui.ap)
 				{
-					_VirtualDom_doc.title = ui.an;
+					_VirtualDom_doc.title = ui.ap;
 				}
-				return _VirtualDom_node('body')(_List_Nil)(ui.ae);
+				return _VirtualDom_node('body')(_List_Nil)(ui.ah);
 			})
 		);
 	};
@@ -3651,8 +3651,8 @@ var _Browser_fullscreen = _Debugger_fullscreen || F4(function(impl, flagDecoder,
 function _Browser_toEnv(flags)
 {
 	return {
-		ac: _Browser_getUrl(),
-		Q: flags
+		af: _Browser_getUrl(),
+		T: flags
 	};
 }
 
@@ -3882,7 +3882,7 @@ var elm_lang$core$Set$toList = function (_n0) {
 	var dict = _n0;
 	return elm_lang$core$Dict$keys(dict);
 };
-var author$project$Debounce$init = {h: _List_Nil, z: false};
+var author$project$Debounce$init = {h: _List_Nil, B: false};
 var elm_lang$core$Basics$True = 0;
 var elm_lang$core$Result$isOk = function (result) {
 	if (!result.$) {
@@ -4082,12 +4082,12 @@ var elm_lang$json$Json$Decode$OneOf = function (a) {
 };
 var elm_lang$core$Platform$Cmd$batch = _Platform_batch;
 var elm_lang$core$Platform$Cmd$none = elm_lang$core$Platform$Cmd$batch(_List_Nil);
-var author$project$Main$init = _Utils_Tuple2(
-	{s: author$project$Debounce$init, A: _List_Nil, G: ''},
+var author$project$MultipleDebouncers$init = _Utils_Tuple2(
+	{H: '', u: author$project$Debounce$init, I: '', v: author$project$Debounce$init, C: _List_Nil},
 	elm_lang$core$Platform$Cmd$none);
 var elm_lang$core$Platform$Sub$batch = _Platform_batch;
 var elm_lang$core$Platform$Sub$none = elm_lang$core$Platform$Sub$batch(_List_Nil);
-var author$project$Main$subscriptions = function (model) {
+var author$project$MultipleDebouncers$subscriptions = function (model) {
 	return elm_lang$core$Platform$Sub$none;
 };
 var author$project$Debounce$Flush = function (a) {
@@ -4274,18 +4274,18 @@ var author$project$Debounce$push = F3(
 				h: A2(elm_lang$core$List$cons, a, d.h)
 			});
 		var selfCmd = function () {
-			var _n1 = config.aa;
+			var _n1 = config.ad;
 			switch (_n1.$) {
 				case 0:
 					var offset = _n1.a;
-					return d.z ? elm_lang$core$Platform$Cmd$none : A2(
+					return d.B ? elm_lang$core$Platform$Cmd$none : A2(
 						author$project$Debounce$delayCmd,
 						offset,
 						author$project$Debounce$Flush(elm_lang$core$Maybe$Nothing));
 				case 1:
 					var offset = _n1.a;
 					var delay = _n1.b;
-					return d.z ? elm_lang$core$Platform$Cmd$none : A2(
+					return d.B ? elm_lang$core$Platform$Cmd$none : A2(
 						author$project$Debounce$delayCmd,
 						offset,
 						author$project$Debounce$Flush(
@@ -4301,7 +4301,7 @@ var author$project$Debounce$push = F3(
 		}();
 		return _Utils_Tuple2(
 			newDebounce,
-			A2(elm_lang$core$Platform$Cmd$map, config.F, selfCmd));
+			A2(elm_lang$core$Platform$Cmd$map, config.J, selfCmd));
 	});
 var author$project$Debounce$takeLast = F3(
 	function (send, head, tail) {
@@ -4339,18 +4339,18 @@ var author$project$Debounce$update = F4(
 					return _Utils_Tuple2(
 						_Utils_update(
 							d,
-							{h: input, z: true}),
+							{h: input, B: true}),
 						elm_lang$core$Platform$Cmd$batch(
 							_List_fromArray(
 								[
 									sendCmd,
-									A2(elm_lang$core$Platform$Cmd$map, config.F, selfCmd)
+									A2(elm_lang$core$Platform$Cmd$map, config.J, selfCmd)
 								])));
 				} else {
 					return _Utils_Tuple2(
 						_Utils_update(
 							d,
-							{z: false}),
+							{B: false}),
 						elm_lang$core$Platform$Cmd$none);
 				}
 			default:
@@ -4378,55 +4378,93 @@ var author$project$Debounce$update = F4(
 				}
 		}
 	});
+var author$project$MultipleDebouncers$DebounceName = function (a) {
+	return {$: 4, a: a};
+};
+var author$project$MultipleDebouncers$DebounceNickname = function (a) {
+	return {$: 5, a: a};
+};
 var author$project$Debounce$Later = function (a) {
 	return {$: 2, a: a};
 };
 var author$project$Debounce$later = author$project$Debounce$Later;
-var author$project$Main$DebounceMsg = function (a) {
+var author$project$MultipleDebouncers$debounceConfig = function (debounceMsg) {
+	return {
+		ad: author$project$Debounce$later(1000),
+		J: debounceMsg
+	};
+};
+var author$project$MultipleDebouncers$Saved = function (a) {
 	return {$: 3, a: a};
 };
-var author$project$Main$debounceConfig = {
-	aa: author$project$Debounce$later(1000),
-	F: author$project$Main$DebounceMsg
-};
-var author$project$Main$Saved = function (a) {
-	return {$: 2, a: a};
-};
-var author$project$Main$save = function (s) {
+var author$project$MultipleDebouncers$save = function (s) {
 	return A2(
 		elm_lang$core$Task$perform,
-		author$project$Main$Saved,
+		author$project$MultipleDebouncers$Saved,
 		elm_lang$core$Task$succeed(s));
 };
-var author$project$Main$update = F2(
+var author$project$MultipleDebouncers$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
 			case 0:
 				return _Utils_Tuple2(model, elm_lang$core$Platform$Cmd$none);
 			case 1:
-				var s = msg.a;
-				var _n1 = A3(author$project$Debounce$push, author$project$Main$debounceConfig, s, model.s);
-				var debounce = _n1.a;
+				var name = msg.a;
+				var _n1 = A3(
+					author$project$Debounce$push,
+					author$project$MultipleDebouncers$debounceConfig(author$project$MultipleDebouncers$DebounceName),
+					name,
+					model.u);
+				var newDebouncer = _n1.a;
 				var cmd = _n1.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{s: debounce, G: s}),
+						{H: name, u: newDebouncer}),
 					cmd);
-			case 3:
-				var msg_ = msg.a;
-				var _n2 = A4(
-					author$project$Debounce$update,
-					author$project$Main$debounceConfig,
-					author$project$Debounce$takeLast(author$project$Main$save),
-					msg_,
-					model.s);
-				var debounce = _n2.a;
+			case 2:
+				var nickname = msg.a;
+				var _n2 = A3(
+					author$project$Debounce$push,
+					author$project$MultipleDebouncers$debounceConfig(author$project$MultipleDebouncers$DebounceNickname),
+					nickname,
+					model.v);
+				var newDebouncer = _n2.a;
 				var cmd = _n2.b;
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{s: debounce}),
+						{I: nickname, v: newDebouncer}),
+					cmd);
+			case 4:
+				var msg_ = msg.a;
+				var _n3 = A4(
+					author$project$Debounce$update,
+					author$project$MultipleDebouncers$debounceConfig(author$project$MultipleDebouncers$DebounceName),
+					author$project$Debounce$takeLast(author$project$MultipleDebouncers$save),
+					msg_,
+					model.u);
+				var newDebouncer = _n3.a;
+				var cmd = _n3.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{u: newDebouncer}),
+					cmd);
+			case 5:
+				var msg_ = msg.a;
+				var _n4 = A4(
+					author$project$Debounce$update,
+					author$project$MultipleDebouncers$debounceConfig(author$project$MultipleDebouncers$DebounceNickname),
+					author$project$Debounce$takeLast(author$project$MultipleDebouncers$save),
+					msg_,
+					model.v);
+				var newDebouncer = _n4.a;
+				var cmd = _n4.b;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{v: newDebouncer}),
 					cmd);
 			default:
 				var s = msg.a;
@@ -4434,13 +4472,16 @@ var author$project$Main$update = F2(
 					_Utils_update(
 						model,
 						{
-							A: A2(elm_lang$core$List$cons, s, model.A)
+							C: A2(elm_lang$core$List$cons, s, model.C)
 						}),
 					elm_lang$core$Platform$Cmd$none);
 		}
 	});
-var author$project$Main$Input = function (a) {
+var author$project$MultipleDebouncers$InputName = function (a) {
 	return {$: 1, a: a};
+};
+var author$project$MultipleDebouncers$InputNickname = function (a) {
+	return {$: 2, a: a};
 };
 var elm_lang$json$Json$Decode$map = _Json_map1;
 var elm_lang$json$Json$Decode$map2 = _Json_map2;
@@ -4467,7 +4508,7 @@ var elm_lang$virtual_dom$VirtualDom$toHandlerInt = function (handler) {
 var elm_lang$html$Html$li = _VirtualDom_node('li');
 var elm_lang$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm_lang$html$Html$text = elm_lang$virtual_dom$VirtualDom$text;
-var author$project$Main$report = function (s) {
+var author$project$MultipleDebouncers$report = function (s) {
 	return A2(
 		elm_lang$html$Html$li,
 		_List_Nil,
@@ -4478,6 +4519,7 @@ var author$project$Main$report = function (s) {
 };
 var elm_lang$html$Html$div = _VirtualDom_node('div');
 var elm_lang$html$Html$input = _VirtualDom_node('input');
+var elm_lang$html$Html$p = _VirtualDom_node('p');
 var elm_lang$html$Html$ul = _VirtualDom_node('ul');
 var elm_lang$json$Json$Encode$string = _Json_wrap;
 var elm_lang$html$Html$Attributes$stringProperty = F2(
@@ -4520,18 +4562,40 @@ var elm_lang$html$Html$Events$onInput = function (tagger) {
 		'input',
 		A2(elm_lang$json$Json$Decode$map, tagger, elm_lang$html$Html$Events$targetValue));
 };
-var author$project$Main$view = function (model) {
+var author$project$MultipleDebouncers$view = function (model) {
 	return A2(
 		elm_lang$html$Html$div,
 		_List_Nil,
 		_List_fromArray(
 			[
 				A2(
+				elm_lang$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm_lang$html$Html$text('Enter your name: ')
+					])),
+				A2(
 				elm_lang$html$Html$input,
 				_List_fromArray(
 					[
-						elm_lang$html$Html$Attributes$value(model.G),
-						elm_lang$html$Html$Events$onInput(author$project$Main$Input)
+						elm_lang$html$Html$Attributes$value(model.H),
+						elm_lang$html$Html$Events$onInput(author$project$MultipleDebouncers$InputName)
+					]),
+				_List_Nil),
+				A2(
+				elm_lang$html$Html$p,
+				_List_Nil,
+				_List_fromArray(
+					[
+						elm_lang$html$Html$text('Enter your nickname: ')
+					])),
+				A2(
+				elm_lang$html$Html$input,
+				_List_fromArray(
+					[
+						elm_lang$html$Html$Attributes$value(model.I),
+						elm_lang$html$Html$Events$onInput(author$project$MultipleDebouncers$InputNickname)
 					]),
 				_List_Nil),
 				A2(
@@ -4539,22 +4603,22 @@ var author$project$Main$view = function (model) {
 				_List_Nil,
 				A2(
 					elm_lang$core$List$map,
-					author$project$Main$report,
-					elm_lang$core$List$reverse(model.A)))
+					author$project$MultipleDebouncers$report,
+					elm_lang$core$List$reverse(model.C)))
 			]));
 };
 var elm_lang$browser$Browser$NotFound = elm_lang$core$Basics$identity;
 var elm_lang$browser$Browser$embed = _Browser_embed;
-var author$project$Main$main = elm_lang$browser$Browser$embed(
+var author$project$MultipleDebouncers$main = elm_lang$browser$Browser$embed(
 	{
-		ah: function (_n0) {
-			return author$project$Main$init;
+		ak: function (_n0) {
+			return author$project$MultipleDebouncers$init;
 		},
-		am: author$project$Main$subscriptions,
-		ao: author$project$Main$update,
-		ap: author$project$Main$view
+		ao: author$project$MultipleDebouncers$subscriptions,
+		aq: author$project$MultipleDebouncers$update,
+		ar: author$project$MultipleDebouncers$view
 	});
-_Platform_export({'Main':author$project$Main$main(
+_Platform_export({'MultipleDebouncers':author$project$MultipleDebouncers$main(
 	elm_lang$json$Json$Decode$succeed(0))(0)({})});}(this));
 
 // It is too complicated to figure out which kind of Program you created
@@ -4564,14 +4628,14 @@ _Platform_export({'Main':author$project$Main$main(
 // from here. Do just the part that makes sense for your application!
 //
 var app =
-    Elm.Main.fullscreen
-        ? Elm.Main.fullscreen()
+    Elm.MultipleDebouncers.fullscreen
+        ? Elm.MultipleDebouncers.fullscreen()
         :
-    Elm.Main.embed
-        ? Elm.Main.embed(document.getElementById('embed'))
+    Elm.MultipleDebouncers.embed
+        ? Elm.MultipleDebouncers.embed(document.getElementById('embed'))
         :
-    Elm.Main.worker
-        ? (document.getElementById('embed').innerText = 'This is a headless program, meaning there is nothing to show here. I started the program anyway though, and you can access it as `app` in the developer console.', Elm.Main.worker())
+    Elm.MultipleDebouncers.worker
+        ? (document.getElementById('embed').innerText = 'This is a headless program, meaning there is nothing to show here. I started the program anyway though, and you can access it as `app` in the developer console.', Elm.MultipleDebouncers.worker())
         : (document.getElementById('embed').innerText = 'I cannot figure out what kind of program this is supposed to be. Perhaps someone on Slack can help?', undefined);
 </script>
 </body>

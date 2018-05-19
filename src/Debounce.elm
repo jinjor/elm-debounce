@@ -52,7 +52,6 @@ module Debounce
 
 import Process
 import Task exposing (..)
-import Time exposing (..)
 
 
 {-| The state of the debouncer.
@@ -86,9 +85,9 @@ type alias Config msg =
 {-| Strategy defines the timing when commands are sent.
 -}
 type Strategy
-    = Manual Time
-    | Soon Time Time
-    | Later Time
+    = Manual Float
+    | Soon Float Float
+    | Later Float
 
 
 {-| Send command as soon as it gets ready, with given rate limit. (a.k.a. Throttle)
@@ -96,21 +95,21 @@ type Strategy
 Note: The first command will be sent immidiately.
 
 -}
-soon : Time -> Strategy
+soon : Float -> Strategy
 soon =
     Soon 0
 
 
 {-| Similar to `soon`, but the first command is sent after offset time.
 -}
-soonAfter : Time -> Time -> Strategy
+soonAfter : Float -> Float -> Strategy
 soonAfter =
     Soon
 
 
 {-| Send command after becomming stable, with given delay time. (a.k.a. Debounce)
 -}
-later : Time -> Strategy
+later : Float -> Strategy
 later =
     Later
 
@@ -127,7 +126,7 @@ manual =
 
 {-| Similar to `manual`, but the first command is sent after offset time.
 -}
-manualAfter : Time -> Strategy
+manualAfter : Float -> Strategy
 manualAfter =
     Manual
 
@@ -169,7 +168,7 @@ init =
 -}
 type Msg
     = NoOp
-    | Flush (Maybe Time)
+    | Flush (Maybe Float)
     | SendIfLengthNotChangedFrom Int
 
 
@@ -285,6 +284,6 @@ push config a (Debounce d) =
     ( newDebounce, Cmd.map config.transform selfCmd )
 
 
-delayCmd : Time -> msg -> Cmd msg
+delayCmd : Float -> msg -> Cmd msg
 delayCmd delay msg =
     Task.perform (\_ -> msg) (Process.sleep delay)
