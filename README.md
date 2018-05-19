@@ -26,7 +26,7 @@ type Msg
 -- Choose the strategy for your use case.
 debounceConfig : Debounce.Config Msg
 debounceConfig =
-  { strategy = Debounce.later (1 * second)
+  { strategy = Debounce.later 1000
   , transform = DebounceMsg
   }
 
@@ -97,7 +97,6 @@ barDebounceConfig =
   { strategy = Debounce.manual
   , transform = DebounceBar
   }
-
 ```
 
 Or to use the same config for both:
@@ -117,7 +116,6 @@ Debounce.push (debounceConfig DebounceFoo) fooValue model.fooDebouncer
 ```
 
 A full example of this approach can be seen [here](https://github.com/jinjor/elm-debounce/blob/master/examples/MultipleDebouncers.elm).
-
 
 ## LICENSE
 
