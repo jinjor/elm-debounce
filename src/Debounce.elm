@@ -196,7 +196,9 @@ update : Config msg -> Send a msg -> Msg -> Debounce a -> ( Debounce a, Cmd msg 
 update config send msg (Debounce d) =
     case msg of
         NoOp ->
-            Debounce d ! []
+            ( Debounce d
+            , Cmd.none
+            )
 
         Flush tryAgainAfter ->
             case d.input of
@@ -213,15 +215,18 @@ update config send msg (Debounce d) =
                                 Nothing ->
                                     Cmd.none
                     in
-                    Debounce
+                    ( Debounce
                         { d
                             | input = input
                             , locked = True
                         }
-                        ! [ sendCmd, Cmd.map config.transform selfCmd ]
+                    , Cmd.batch [ sendCmd, Cmd.map config.transform selfCmd ]
+                    )
 
                 _ ->
-                    Debounce { d | locked = False } ! []
+                    ( Debounce { d | locked = False }
+                    , Cmd.none
+                    )
 
         SendIfLengthNotChangedFrom lastInputLength ->
             case ( List.length d.input <= lastInputLength, d.input ) of
@@ -235,7 +240,9 @@ update config send msg (Debounce d) =
                     )
 
                 _ ->
-                    Debounce d ! []
+                    ( Debounce d
+                    , Cmd.none
+                    )
 
 
 {-| Manually unlock. This works for `manual` or `manualAfter` Strategy.
@@ -261,12 +268,14 @@ push config a (Debounce d) =
                 Manual offset ->
                     if d.locked then
                         Cmd.none
+
                     else
                         delayCmd offset (Flush Nothing)
 
                 Soon offset delay ->
                     if d.locked then
                         Cmd.none
+
                     else
                         delayCmd offset (Flush (Just delay))
 
