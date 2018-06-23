@@ -10,7 +10,7 @@ import Task exposing (..)
 
 main : Program () Model Msg
 main =
-    Browser.embed
+    Browser.element
         { init = \_ -> init
         , view = view
         , update = update

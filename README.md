@@ -119,4 +119,4 @@ A full example of this approach can be seen [here](https://github.com/jinjor/elm
 
 ## LICENSE
 
-BSD3
+BSD-3-Clause
