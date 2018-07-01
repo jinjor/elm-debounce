@@ -9,11 +9,13 @@ This library follows the Elm Architecture. See the full example [here](https://g
 ```elm
 init : ( Model, Cmd Msg )
 init =
-  { value = ""
-  -- Initialize the debouncer.
-  , debounce = Debounce.init
-  , report = []
-  } ! []
+  ( { value = ""
+    -- Initialize the debouncer.
+    , debounce = Debounce.init
+    , report = []
+    }
+  , Cmd.none
+  )
 
 
 type Msg
@@ -40,10 +42,12 @@ update msg model =
         (debounce, cmd) =
           Debounce.push debounceConfig s model.debounce
       in
-        { model
-        | value = s
-        , debounce = debounce
-        } ! [ cmd ]
+        ( { model
+            | value = s
+            , debounce = debounce
+          }
+        , cmd
+        )
 
     -- This is where commands are actually sent.
     -- The logic can be dependent on the current model.
@@ -57,7 +61,9 @@ update msg model =
             msg
             model.debounce
       in
-        { model | debounce = debounce } ! [ cmd ]
+        ( { model | debounce = debounce }
+        , cmd
+        )
 
     ...
 ```
@@ -69,12 +75,14 @@ If you need to debounce multiple event sources, one approach is to repeat the pa
 ```elm
 init : ( Model, Cmd Msg )
 init =
-  { value = ""
-  -- Initialize *multiple* debouncers.
-  , fooDebouncer = Debounce.init
-  , barDeboucner = Debounce.init
-  , report = []
-  } ! []
+  ( { value = ""
+    -- Initialize *multiple* debouncers.
+    , fooDebouncer = Debounce.init
+    , barDeboucner = Debounce.init
+    , report = []
+    }
+  , Cmd.none
+  )
 
 type Msg
   = InputFoo String
